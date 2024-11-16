@@ -13,7 +13,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	auto r_uuid = my_uuid;
 	r_uuid.to128();
 	r_uuid.reverseByteOrder();
-	if (!core.begin(model, *reinterpret_cast<const uint8_t(*)[16]>(r_uuid.getValue()))) {
+	if (!core.begin(model, *reinterpret_cast<const uint8_t(*)[16]>(r_uuid.getValue())) || !core.generate_keypair()) {
 		return false;
 	}
 

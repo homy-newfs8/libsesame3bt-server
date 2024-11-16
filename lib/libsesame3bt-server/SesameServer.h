@@ -23,11 +23,6 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool start_advertising();
 	bool stop_advertising();
 	void update();
-	bool load_key(const std::array<std::byte, Sesame::SK_SIZE>& privkey) { return core.load_key(privkey); }
-	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey) {
-		return core.export_keypair(pubkey, privkey);
-	}
-	bool generate_keypair() { return core.generate_keypair(); }
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) { return core.set_registered(secret); }
 	void set_on_registration_callback(registration_callback_t callback) { registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }

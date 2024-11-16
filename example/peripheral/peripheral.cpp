@@ -24,7 +24,8 @@
 
 /*
  * 最大セッション数を設定
- * 3を超えるデバイスを扱う場合NimBLE-Arduinoの最大接続数も調整する必要があります
+ * 3を超えるデバイスを扱う場合NimBLE-Arduinoの最大接続数も調整する必要があります。
+ * コンパイルオプションでシンボルCONFIG_BT_NIMBLE_MAX_CONNECTIONSに9以下の数値を設定してください。
  */
 #ifndef SESAME_SERVER_MAX_SESSIONS
 #ifdef CONFIG_BT_NIMBLE_MAX_CONNECTIONS
@@ -63,84 +64,47 @@ constexpr uint8_t reset_button_pin = 41;
 }  // namespace
 
 /*
- * キーペアを用意する
- * NVSに秘密鍵が保存してあればそれをロードし、なければ新規に生成する
- *
- * NVSの秘密鍵をロードした場合は、さらに保存してある共有鍵をロードする
+ * NVSに保存してある共有鍵をロードする
  * 共有鍵がない場合は未登録デバイスとしてふるまう
  */
 bool
-prepare_keypair() {
+prepare_secret() {
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
 		Serial.println("Failed to init prefs");
 		return false;
 	}
-	bool need_recreate = true;
 	ble_uuid128_t stored;
-	// 初期化ボタンが押されておらず、かつ保存されているUUIDが指定されたUUIDと同一ならば保存されていたキーペアを使用する
+	// 起動時に初期化ボタンが押されておらず、かつ保存されているUUIDが指定されたUUIDと同一ならば保存されていた共有鍵を使用する
+	// 初期化ボタンが押されている場合は登録されていた共有鍵を使用せず、未登録デバイスとして動作を開始する
 	if (digitalRead(reset_button_pin) == HIGH && prefs.getBytes(prefs_uuid, stored.value, sizeof(stored.value)) == UUID_SIZE) {
 		stored.u.type = BLE_UUID_TYPE_128;
 		if (my_uuid == NimBLEUUID(&stored)) {
 			Serial.println("UUID not changed");
-			need_recreate = false;
-		}
-	}
-	std::array<std::byte, Sesame::SK_SIZE> privkey;
-	if (need_recreate) {
-		if (prefs.putBytes(prefs_uuid, my_uuid.getValue(), UUID_SIZE) != UUID_SIZE) {
-			Serial.println("Failed to store UUID, abort");
-			return false;
-		}
-	} else {
-		if (prefs.getBytes(prefs_privkey, privkey.data(), privkey.size()) == privkey.size()) {
-			if (server.load_key(privkey)) {
-				Serial.println("keypair loaded");
-				std::array<std::byte, Sesame::SECRET_SIZE> secret;
-				if (prefs.getBytes(prefs_secret, secret.data(), secret.size()) == secret.size()) {
-					if (server.set_registered(secret)) {
-						Serial.printf("Stored secret=%s\n", util::bin2hex(secret).c_str());
-						registered = true;
-					}
-				}
-				return true;
-			} else {
-				Serial.println("Failed to load keypair, abort");
+			std::array<std::byte, Sesame::SECRET_SIZE> secret;
+			if (prefs.getBytes(prefs_secret, secret.data(), secret.size()) != secret.size() || !server.set_registered(secret)) {
+				Serial.printf("Failed to restore secret\n");
 				return false;
 			}
-		} else {
-			Serial.println("Stored keys not valid, regenerate");
+			Serial.printf("Restored secret = %s\n", util::bin2hex(secret).c_str());
 		}
-	}
-	if (!server.generate_keypair()) {
-		Serial.println("Failed to generate keypair, abort");
-		return false;
-	}
-	std::array<std::byte, Sesame::PK_SIZE> pubkey;
-	if (!server.export_keypair(pubkey, privkey)) {
-		Serial.println("Failed to retrieve keypair, abort");
-		return false;
-	}
-	if (prefs.putBytes(prefs_privkey, privkey.data(), privkey.size()) == privkey.size()) {
-		Serial.println("Keypair generated, and stored");
-		if (prefs.isKey(prefs_secret)) {
-			if (!prefs.remove(prefs_secret)) {
-				Serial.println("Failed to delete old shared secret");
-				return false;
-			}
-		}
-	} else {
-		Serial.println("Failed to store keypair, abort");
 	}
 	return true;
 }
 
+/*
+ * スマホで登録処理が完了した際のコールバック
+ */
 void
 on_registration(NimBLEAddress addr, const std::array<std::byte, Sesame::SECRET_SIZE> secret) {
 	Serial.printf("registration by %s, secret=%s\n", addr.toString().c_str(), util::bin2hex(secret).c_str());
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
 		Serial.println("Failed to init prefs");
+		return;
+	}
+	if (prefs.putBytes(prefs_uuid, my_uuid.getValue(), UUID_SIZE) != UUID_SIZE) {
+		Serial.println("Failed to store UUID, abort");
 		return;
 	}
 	if (prefs.putBytes(prefs_secret, secret.data(), secret.size()) != secret.size()) {
@@ -150,9 +114,12 @@ on_registration(NimBLEAddress addr, const std::array<std::byte, Sesame::SECRET_S
 	Serial.println("Secret stored");
 }
 
+/*
+ * Remote / Remote nano / Open Sensorからのコマンド受信時コールバック
+ */
 Sesame::result_code_t
 on_command(NimBLEAddress addr, Sesame::item_code_t cmd, const std::string& tag) {
-	Serial.printf("receive command = %u from %s\n", static_cast<uint8_t>(cmd), addr.toString().c_str());
+	Serial.printf("receive command = %u (%s) from %s\n", static_cast<uint8_t>(cmd), tag.c_str(), addr.toString().c_str());
 	return Sesame::result_code_t::success;
 }
 
@@ -166,7 +133,7 @@ setup() {
 		return;
 	}
 
-	initialized = prepare_keypair();
+	initialized = prepare_secret();
 	if (!initialized) {
 		return;
 	}
