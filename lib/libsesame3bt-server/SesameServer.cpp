@@ -6,10 +6,17 @@
 namespace libsesame3bt {
 
 bool
-SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
+SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& my_uuid) {
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
 	core.set_on_command_callback(
 	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag) { return on_command(session_id, cmd, tag); });
+
+	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
+	    !NimBLEDevice::setOwnAddr(server_address)) {
+		Serial.println("Failed to init BLE");
+		return false;
+	}
+
 	auto r_uuid = my_uuid;
 	r_uuid.to128();
 	r_uuid.reverseByteOrder();
@@ -34,7 +41,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	tx->setCallbacks(this);
 	srv->start();
 	// create dummy service to limit end handle value of CANDY HOUSE service group (SESAME3_SRV_UUID(0xfd81))
-	auto srv2 = ble_server->createService(NimBLEUUID(0xfefefefe));
+	auto srv2 = ble_server->createService(NimBLEUUID(static_cast<uint32_t>(0xfefefefe)));
 	srv2->start();
 	ble_server->start();
 
@@ -105,7 +112,6 @@ void
 SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
 	if (pCharacteristic == rx) {
 		auto val = pCharacteristic->getValue();
-		DEBUG_PRINTLN("onWrite RX(%u)", val.size());
 		if (!core.on_received(connInfo.getConnHandle(), reinterpret_cast<const std::byte*>(val.data()), val.size())) {
 			DEBUG_PRINTLN("core.on_received failed, disconnect");
 			ble_server->disconnect(connInfo);
@@ -118,7 +124,7 @@ SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& con
 bool
 SesameServer::write_to_peripheral(uint16_t session_id, const uint8_t* data, size_t size) {
 	if (tx) {
-		DEBUG_PRINTLN("send %u bytes to %u", size, session_id);
+		DEBUG_PRINTLN("TX characterristic not created, cannot proceed");
 		tx->notify(data, size, session_id);
 		return true;
 	}

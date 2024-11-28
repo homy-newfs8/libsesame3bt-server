@@ -47,7 +47,6 @@ NimBLEAddress my_addr{SESAME_SERVER_ADDRESS, BLE_ADDR_RANDOM};
 SesameServer server{SESAME_SERVER_MAX_SESSIONS};
 
 bool initialized;
-bool registered;
 
 namespace {
 
@@ -55,7 +54,6 @@ constexpr size_t UUID_SIZE = 16;
 
 // このサンプルではNVS領域にPreferencesを使って秘密情報を保存しています
 constexpr const char prefs_name[] = "sesameserver";
-constexpr const char prefs_privkey[] = "privk";
 constexpr const char prefs_uuid[] = "uuid";
 constexpr const char prefs_secret[] = "secret";
 // 起動時にこのPINに接続されているボタンの状態を検査し、押下されていたら未登録状態に初期化する
@@ -96,7 +94,7 @@ prepare_secret() {
  * スマホで登録処理が完了した際のコールバック
  */
 void
-on_registration(NimBLEAddress addr, const std::array<std::byte, Sesame::SECRET_SIZE> secret) {
+on_registration(const NimBLEAddress& addr, const std::array<std::byte, Sesame::SECRET_SIZE>& secret) {
 	Serial.printf("registration by %s, secret=%s\n", addr.toString().c_str(), util::bin2hex(secret).c_str());
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
@@ -127,33 +125,26 @@ void
 setup() {
 	delay(5000);
 	Serial.begin(115200);
-	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
-	    !NimBLEDevice::setOwnAddr(my_addr)) {
-		Serial.println("Failed to init BLE");
-		return;
-	}
 
-	initialized = prepare_secret();
-	if (!initialized) {
+	if (!prepare_secret()) {
 		return;
 	}
 	Serial.printf("my uuid = %s\n", my_uuid.toString().c_str());
-	auto addr = NimBLEDevice::getAddress();
-	Serial.printf("my address = %s(%u)\n", addr.toString().c_str(), addr.getType());
-	if (!registered) {
+	if (!server.is_registered()) {
 		server.set_on_registration_callback(on_registration);
 	}
 	server.set_on_command_callback(on_command);
-	initialized = server.begin(Sesame::model_t::sesame_5, my_uuid);
-	if (!initialized) {
+	if (!server.begin(Sesame::model_t::sesame_5, my_addr, my_uuid)) {
 		Serial.println("initialization failed");
 		return;
 	}
-	initialized = server.start_advertising();
-	if (!initialized) {
-		Serial.println("Advertisement failed");
+	auto addr = NimBLEDevice::getAddress();
+	Serial.printf("my address = %s(%u)\n", addr.toString().c_str(), addr.getType());
+	if (!server.start_advertising()) {
+		Serial.println("Start advertisement failed");
 		return;
 	}
+	initialized = true;
 	Serial.println("Advertisement started");
 }
 

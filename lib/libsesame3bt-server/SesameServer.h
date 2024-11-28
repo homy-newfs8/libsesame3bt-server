@@ -10,8 +10,10 @@
 
 namespace libsesame3bt {
 
-using registration_callback_t = std::function<void(NimBLEAddress, const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
-using command_callback_t = std::function<Sesame::result_code_t(NimBLEAddress, Sesame::item_code_t cmd, const std::string& tag)>;
+using registration_callback_t =
+    std::function<void(const NimBLEAddress& addr, const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
+using command_callback_t =
+    std::function<Sesame::result_code_t(const NimBLEAddress& addr, Sesame::item_code_t cmd, const std::string& tag)>;
 
 class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristicCallbacks, private core::ServerBLEBackend {
  public:
@@ -19,7 +21,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	SesameServer(const SesameServer&) = delete;
 	virtual ~SesameServer() {}
 
-	bool begin(libsesame3bt::Sesame::model_t model, const NimBLEUUID& uuid);
+	bool begin(libsesame3bt::Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& uuid);
 	bool start_advertising();
 	bool stop_advertising();
 	void update();
@@ -27,6 +29,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	void set_on_registration_callback(registration_callback_t callback) { registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }
 	size_t get_session_count() { return core.get_session_count(); }
+	bool is_registered() const { return core.is_registered(); }
 
  private:
 	NimBLEAdvertising* adv = nullptr;
