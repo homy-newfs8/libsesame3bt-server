@@ -122,7 +122,7 @@ SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& con
 }
 
 bool
-SesameServer::write_to_peripheral(uint16_t session_id, const uint8_t* data, size_t size) {
+SesameServer::write_to_central(uint16_t session_id, const uint8_t* data, size_t size) {
 	if (tx) {
 		DEBUG_PRINTLN("TX characterristic not created, cannot proceed");
 		tx->notify(data, size, session_id);

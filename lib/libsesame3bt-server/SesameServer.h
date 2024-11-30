@@ -48,7 +48,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	virtual void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) override;
 	virtual void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
 	virtual void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
-	virtual bool write_to_peripheral(uint16_t session_id, const uint8_t* data, size_t size) override;
+	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) override;
 	virtual void disconnect(uint16_t session_id) override;
 	void on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	Sesame::result_code_t on_command(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag);
