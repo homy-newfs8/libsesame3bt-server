@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <Sesame.h>
 #include <SesameServer.h>
+#include <TaskManagerIO.h>
 #include <libsesame3bt/util.h>
 #if __has_include("mysesame-config.h")
 #include "mysesame-config.h"
@@ -118,6 +119,10 @@ on_registration(const NimBLEAddress& addr, const std::array<std::byte, Sesame::S
 Sesame::result_code_t
 on_command(NimBLEAddress addr, Sesame::item_code_t cmd, const std::string& tag) {
 	Serial.printf("receive command = %u (%s) from %s\n", static_cast<uint8_t>(cmd), tag.c_str(), addr.toString().c_str());
+	if (cmd == Sesame::item_code_t::lock || cmd == Sesame::item_code_t::unlock) {
+		bool locked = cmd == Sesame::item_code_t::lock;
+		taskManager.schedule(onceSeconds(0), [locked]() { server.send_lock_status(locked); });
+	}
 	return Sesame::result_code_t::success;
 }
 
@@ -161,5 +166,6 @@ loop() {
 		last_reported = millis();
 	}
 	server.update();
+	taskManager.runLoop();
 	delay(100);
 }

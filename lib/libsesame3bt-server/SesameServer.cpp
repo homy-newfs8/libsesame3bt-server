@@ -56,6 +56,16 @@ SesameServer::update() {
 	core.update();
 }
 
+bool
+SesameServer::send_lock_status(bool locked) {
+	Sesame::mecha_status_5_t status{};
+	status.battery = 10;
+	status.in_lock = locked;
+	status.is_stop = true;
+	return send_notify({}, Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, reinterpret_cast<std::byte*>(&status),
+	                   sizeof(status));
+}
+
 void
 SesameServer::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
 	DEBUG_PRINTLN("Connected from = %s", connInfo.getAddress().toString().c_str());

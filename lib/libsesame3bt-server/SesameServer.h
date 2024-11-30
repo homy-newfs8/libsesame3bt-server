@@ -5,6 +5,7 @@
 #include <libsesame3bt/BLEBackend.h>
 #include <libsesame3bt/ServerCore.h>
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -21,7 +22,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	SesameServer(const SesameServer&) = delete;
 	virtual ~SesameServer() {}
 
-	bool begin(libsesame3bt::Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& uuid);
+	bool begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& uuid);
 	bool start_advertising();
 	bool stop_advertising();
 	void update();
@@ -30,6 +31,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }
 	size_t get_session_count() { return core.get_session_count(); }
 	bool is_registered() const { return core.is_registered(); }
+	bool send_lock_status(bool locked);
 
  private:
 	NimBLEAdvertising* adv = nullptr;
@@ -52,6 +54,13 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	virtual void disconnect(uint16_t session_id) override;
 	void on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	Sesame::result_code_t on_command(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag);
+	bool send_notify(std::optional<uint16_t> session_id,
+	                 Sesame::op_code_t op_code,
+	                 Sesame::item_code_t item_code,
+	                 const std::byte* data,
+	                 size_t size) {
+		return core.send_notify(session_id, op_code, item_code, data, size);
+	}
 };
 
 }  // namespace libsesame3bt
