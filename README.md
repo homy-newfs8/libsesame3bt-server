@@ -1,7 +1,7 @@
 # libsesame3bt-server
 BLE上でSESAME 5っぽく見えるような動作をするESP32用ライブラリ
 
-本ライブラリはBLE上でSESAME 5デバイスを模倣した動作をすることにより、CANDYHOUSE Remote / Remote nano / SESAME Touch のボタン操作およびOpen Sensorの状態変化を受信することができるライブラリです。
+本ライブラリはBLE上でSESAME 5デバイスを模倣した動作をすることにより、CANDY HOUSE Remote / Remote nano / SESAME Touch のボタン操作およびOpen Sensorの状態変化を受信することができるライブラリです。
 ESP32シリーズで動作します。
 
 # 必要なもの
