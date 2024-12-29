@@ -11,4 +11,4 @@ ESP32シリーズで動作します。
 基本的に[Arduino core for ESP32](https://github.com/espressif/arduino-esp32)がサポートするESP32シリーズはどれでも動作すると思われます。私はArduino core v2.0系を使い、ESP32 C3やESP32 S3で動作確認しています。
 
 # 使い方
-[example/peripheral](example/peripheral/peripheral.cpp)を見てください。
+[example/peripheral](../example/peripheral/peripheral.cpp)を見てください。
