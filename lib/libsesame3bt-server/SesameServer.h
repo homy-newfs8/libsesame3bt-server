@@ -41,7 +41,6 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	NimBLECharacteristic* rx = nullptr;
 	registration_callback_t registration_callback;
 	command_callback_t command_callback;
-	bool registered;
 
 	core::SesameServerCore core;
 

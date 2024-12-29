@@ -20,7 +20,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, 
 	auto r_uuid = my_uuid;
 	r_uuid.to128();
 	r_uuid.reverseByteOrder();
-	if (!core.begin(model, *reinterpret_cast<const uint8_t(*)[16]>(r_uuid.getValue())) || !core.generate_keypair()) {
+	if (!core.begin(model, *reinterpret_cast<const uint8_t(*)[16]>(r_uuid.getValue()))) {
 		return false;
 	}
 
@@ -134,10 +134,10 @@ SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& con
 bool
 SesameServer::write_to_central(uint16_t session_id, const uint8_t* data, size_t size) {
 	if (tx) {
-		DEBUG_PRINTLN("TX characterristic not created, cannot proceed");
 		tx->notify(data, size, session_id);
 		return true;
 	}
+	DEBUG_PRINTLN("TX characteristic not created, cannot proceed");
 	return false;
 }
 
@@ -150,21 +150,20 @@ SesameServer::disconnect(uint16_t session_id) {
 
 void
 SesameServer::on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret) {
-	registered = true;
 	adv->stop();
 	auto [manu, name] = core.create_advertisement_data_os3();
 	adv->setManufacturerData(manu);
 	adv->setName(name);
 	adv->start();
 	if (registration_callback) {
-		registration_callback(ble_server->getPeerIDInfo(session_id).getAddress(), secret);
+		registration_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), secret);
 	}
 }
 
 Sesame::result_code_t
 SesameServer::on_command(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag) {
 	if (command_callback) {
-		return command_callback(ble_server->getPeerIDInfo(session_id).getAddress(), cmd, tag);
+		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag);
 	} else {
 		return Sesame::result_code_t::not_supported;
 	}
