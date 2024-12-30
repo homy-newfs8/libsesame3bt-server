@@ -60,6 +60,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	                 size_t size) {
 		return core.send_notify(session_id, op_code, item_code, data, size);
 	}
+	bool set_advertising_data();
 };
 
 }  // namespace libsesame3bt

@@ -5,6 +5,8 @@
 
 namespace libsesame3bt {
 
+namespace util = libsesame3bt::core::util;
+
 bool
 SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& my_uuid) {
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
@@ -27,10 +29,9 @@ SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, 
 	adv = NimBLEDevice::getAdvertising();
 	adv->setMinInterval(1000);
 	adv->setMaxInterval(1500);
-	adv->addServiceUUID(NimBLEUUID{Sesame::SESAME3_SRV_UUID});
-	auto [manu, name] = core.create_advertisement_data_os3();
-	adv->setManufacturerData(manu);
-	adv->setName(name);
+	if (!set_advertising_data()) {
+		DEBUG_PRINTLN("Failed to set advertising data");
+	}
 
 	ble_server = NimBLEDevice::createServer();
 	ble_server->setCallbacks(this, false);
@@ -151,9 +152,9 @@ SesameServer::disconnect(uint16_t session_id) {
 void
 SesameServer::on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret) {
 	adv->stop();
-	auto [manu, name] = core.create_advertisement_data_os3();
-	adv->setManufacturerData(manu);
-	adv->setName(name);
+	if (!set_advertising_data()) {
+		DEBUG_PRINTLN("Failed to update advertising data");
+	}
 	adv->start();
 	if (registration_callback) {
 		registration_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), secret);
@@ -167,6 +168,18 @@ SesameServer::on_command(uint16_t session_id, Sesame::item_code_t cmd, const std
 	} else {
 		return Sesame::result_code_t::not_supported;
 	}
+}
+
+bool
+SesameServer::set_advertising_data() {
+	if (!adv) {
+		return false;
+	}
+	adv->clearData();
+	auto [manu, name] = core.create_advertisement_data_os3();
+	DEBUG_PRINTLN("new manu = %s", util::bin2hex(manu).c_str());
+	adv->enableScanResponse(true);
+	return adv->addServiceUUID(NimBLEUUID{Sesame::SESAME3_SRV_UUID}) && adv->setManufacturerData(manu) && adv->setName(name);
 }
 
 }  // namespace libsesame3bt

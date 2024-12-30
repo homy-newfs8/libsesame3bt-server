@@ -150,7 +150,7 @@ setup() {
 		return;
 	}
 	initialized = true;
-	Serial.println("Advertisement started");
+	Serial.printf("Advertisement started in %s state\n", server.is_registered() ? "Registered" : "NOT Registered");
 }
 
 uint32_t last_reported;
