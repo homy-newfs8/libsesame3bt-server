@@ -1,5 +1,8 @@
 # Changelog
 
+# [0.1.2] 2025-03-21
+- Bump libsesame3bt-core version to 0.9.0
+
 # [0.1.1] 2024-12-30
 
 ## Bug fix
