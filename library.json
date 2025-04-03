@@ -1,6 +1,6 @@
 {
 	"name": "libsesame3bt-server",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "Bluetooth LE server (peripheral) for CANDY HOUSE SESAME Remote\nNeeds C++17 environment.",
 	"license": "MIT",
 	"frameworks": "Arduino",
@@ -21,9 +21,9 @@
 	},
 	"dependencies": {
 		"libsesame3bt-core": "https://github.com/homy-newfs8/libsesame3bt-core#v0.9.0",
-		"h2zero/NimBLE-Arduino": "~2.1.2"
+		"h2zero/NimBLE-Arduino": "~2.2.3"
 	},
 	"development_dependencies": {
-		"h2zero/NimBLE-Arduino": "~2.1.2"
+		"h2zero/NimBLE-Arduino": "~2.2.3"
 	}
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+# [0.1.3] 2025-04-03
+- Bump NimBLE-Arduino version to 2.2.3
+
 # [0.1.2] 2025-03-21
 - Bump libsesame3bt-core version to 0.9.0
 
