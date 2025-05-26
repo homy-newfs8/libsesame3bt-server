@@ -32,6 +32,8 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	size_t get_session_count() { return core.get_session_count(); }
 	bool is_registered() const { return core.is_registered(); }
 	bool send_lock_status(bool locked);
+	bool has_session(const NimBLEAddress& addr) const;
+	void disconnect(const NimBLEAddress& addr);
 
  private:
 	NimBLEAdvertising* adv = nullptr;

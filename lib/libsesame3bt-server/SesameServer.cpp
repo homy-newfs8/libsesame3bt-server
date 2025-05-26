@@ -22,7 +22,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, 
 	auto r_uuid = my_uuid;
 	r_uuid.to128();
 	r_uuid.reverseByteOrder();
-	if (!core.begin(model, *reinterpret_cast<const uint8_t(*)[16]>(r_uuid.getValue()))) {
+	if (!core.begin(model, *reinterpret_cast<const uint8_t (*)[16]>(r_uuid.getValue()))) {
 		return false;
 	}
 
@@ -144,6 +144,7 @@ SesameServer::write_to_central(uint16_t session_id, const uint8_t* data, size_t 
 
 void
 SesameServer::disconnect(uint16_t session_id) {
+	DEBUG_PRINTLN("Disconnecting session %u", session_id);
 	if (ble_server->disconnect(session_id) != 0) {
 		DEBUG_PRINTLN("Failed to disconnect session %u", session_id);
 	}
@@ -180,6 +181,24 @@ SesameServer::set_advertising_data() {
 	DEBUG_PRINTLN("new manu = %s", util::bin2hex(manu).c_str());
 	adv->enableScanResponse(true);
 	return adv->addServiceUUID(NimBLEUUID{Sesame::SESAME3_SRV_UUID}) && adv->setManufacturerData(manu) && adv->setName(name);
+}
+
+void
+SesameServer::disconnect(const NimBLEAddress& addr) {
+	auto conn = ble_server->getPeerInfo(addr);
+	if (!conn.getAddress().isNull()) {
+		// 切断理由をデフォルト値のBLE_ERR_REM_USER_CONN_TERMを使うと、Touchの登録から削除されてしまう模様
+		// BLE_ERR_CONN_TERM_LOCALを使うと、Remoteの登録から削除されてしまう模様..
+		ble_server->disconnect(conn.getConnHandle(), BLE_ERR_RD_CONN_TERM_RESRCS);
+	} else {
+		DEBUG_PRINTLN("No connection found for address %s", addr.toString().c_str());
+	}
+}
+
+bool
+SesameServer::has_session(const NimBLEAddress& addr) const {
+	auto conn = ble_server->getPeerInfo(addr);
+	return !conn.getAddress().isNull() && core.has_session(conn.getConnHandle());
 }
 
 }  // namespace libsesame3bt
