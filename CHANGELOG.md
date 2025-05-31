@@ -1,6 +1,6 @@
 # Changelog
 
-# [0.1.4] 2025-XX-XX
+# [0.2.0] 2025-05-31
 - Add `has_session()` and `disconnect()`.
 
 # [0.1.3] 2025-04-03
