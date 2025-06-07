@@ -11,7 +11,9 @@ bool
 SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& my_uuid) {
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
 	core.set_on_command_callback(
-	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag) { return on_command(session_id, cmd, tag); });
+	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<trigger_type_t> trigger_type) {
+		    return on_command(session_id, cmd, tag, trigger_type);
+	    });
 
 	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
 	    !NimBLEDevice::setOwnAddr(server_address)) {
@@ -163,9 +165,12 @@ SesameServer::on_registration(uint16_t session_id, const std::array<std::byte, S
 }
 
 Sesame::result_code_t
-SesameServer::on_command(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag) {
+SesameServer::on_command(uint16_t session_id,
+                         Sesame::item_code_t cmd,
+                         const std::string& tag,
+                         std::optional<trigger_type_t> trigger_type) {
 	if (command_callback) {
-		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag);
+		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag, trigger_type);
 	} else {
 		return Sesame::result_code_t::not_supported;
 	}
@@ -193,6 +198,22 @@ SesameServer::disconnect(const NimBLEAddress& addr) {
 	} else {
 		DEBUG_PRINTLN("No connection found for address %s", addr.toString().c_str());
 	}
+}
+
+/// @brief Retrieve a BLE address from SESAME UUID (SESAME 5 and later).
+/// @param uuid The SESAME UUID to convert.
+/// @return BLE address. If error occurred, empty NimBLEAddress is returned (test with isNull()).
+NimBLEAddress
+SesameServer::uuid_to_ble_address(const NimBLEUUID& uuid) {
+	if (uuid.bitSize() != 128) {
+		DEBUG_PRINTLN("Invalid UUID size, must be 128 bits");
+		return {};
+	}
+	NimBLEUUID r_uuid{uuid};
+	r_uuid.reverseByteOrder();
+	auto b_addr = libsesame3bt::core::SesameServerCore::uuid_to_ble_address(
+	    *reinterpret_cast<const std::byte(*)[16]>(reinterpret_cast<const std::byte*>(r_uuid.getValue())));
+	return {reinterpret_cast<const uint8_t*>(b_addr.data()), BLE_ADDR_RANDOM};
 }
 
 bool

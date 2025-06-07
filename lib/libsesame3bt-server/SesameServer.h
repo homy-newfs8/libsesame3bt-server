@@ -13,8 +13,10 @@ namespace libsesame3bt {
 
 using registration_callback_t =
     std::function<void(const NimBLEAddress& addr, const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
-using command_callback_t =
-    std::function<Sesame::result_code_t(const NimBLEAddress& addr, Sesame::item_code_t cmd, const std::string& tag)>;
+using command_callback_t = std::function<Sesame::result_code_t(const NimBLEAddress& addr,
+                                                               Sesame::item_code_t cmd,
+                                                               const std::string& tag,
+                                                               std::optional<trigger_type_t> trigger_type)>;
 
 class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristicCallbacks, private core::ServerBLEBackend {
  public:
@@ -35,6 +37,8 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
 
+	static NimBLEAddress uuid_to_ble_address(const NimBLEUUID& uuid);
+
  private:
 	NimBLEAdvertising* adv = nullptr;
 	NimBLEServer* ble_server = nullptr;
@@ -54,7 +58,10 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) override;
 	virtual void disconnect(uint16_t session_id) override;
 	void on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
-	Sesame::result_code_t on_command(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag);
+	Sesame::result_code_t on_command(uint16_t session_id,
+	                                 Sesame::item_code_t cmd,
+	                                 const std::string& tag,
+	                                 std::optional<trigger_type_t> trigger_type);
 	bool send_notify(std::optional<uint16_t> session_id,
 	                 Sesame::op_code_t op_code,
 	                 Sesame::item_code_t item_code,

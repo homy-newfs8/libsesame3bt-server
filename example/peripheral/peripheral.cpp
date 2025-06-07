@@ -117,8 +117,13 @@ on_registration(const NimBLEAddress& addr, const std::array<std::byte, Sesame::S
  * Remote / Remote nano / Open Sensorからのコマンド受信時コールバック
  */
 Sesame::result_code_t
-on_command(NimBLEAddress addr, Sesame::item_code_t cmd, const std::string& tag) {
-	Serial.printf("receive command = %u (%s) from %s\n", static_cast<uint8_t>(cmd), tag.c_str(), addr.toString().c_str());
+on_command(NimBLEAddress addr,
+           Sesame::item_code_t cmd,
+           const std::string& tag,
+           std::optional<libsesame3bt::trigger_type_t> trigger_type) {
+	Serial.printf("receive command = %u (%s: %s) from %s\n", static_cast<uint8_t>(cmd),
+	              trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
+	              addr.toString().c_str());
 	if (cmd == Sesame::item_code_t::lock || cmd == Sesame::item_code_t::unlock) {
 		bool locked = cmd == Sesame::item_code_t::lock;
 		taskManager.schedule(onceSeconds(0), [locked]() { server.send_lock_status(locked); });
@@ -162,7 +167,11 @@ loop() {
 		return;
 	}
 	if (last_reported == 0 || millis() - last_reported > 3'000) {
-		Serial.printf("session count = %u\n", server.get_session_count());
+		if (!server.is_registered()) {
+			Serial.println("NOT Registered");
+		} else {
+			Serial.printf("session count = %u\n", server.get_session_count());
+		}
 		last_reported = millis();
 	}
 	server.update();

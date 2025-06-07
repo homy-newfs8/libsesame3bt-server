@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.3.0] 2025-XX-XX
+- Add `uuid_to_ble_address()`
+
+## Breaking changes
+- Add `trigger_type` argument to `on_command` callback.
+Support for new Sesame history tag format (May 2025).
+	- If `trigger_type` has a value, the `tag` string will be a UUID (128-bit) hex string.
+The human-readable tag string value appears to be managed by the SESAME Server (SESAME Biz).
+	 - Touch/Remote with older firmware will send the literal tag string as before. In that case, `trigger_value` will not have a value.
+
 # [0.2.0] 2025-05-31
 - Add `has_session()` and `disconnect()`.
 
