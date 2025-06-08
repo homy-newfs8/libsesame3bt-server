@@ -1,6 +1,6 @@
 # Changelog
 
-# [0.3.0] 2025-XX-XX
+# [0.3.0] 2025-06-08
 - Add `uuid_to_ble_address()`
 
 ## Breaking changes
