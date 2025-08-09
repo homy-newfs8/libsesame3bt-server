@@ -1,5 +1,10 @@
 # Changelog
 
+# [v0.4.0] 2025-08-09
+- Supports Arduino ESP32 3.x in addition to 2.x.
+- Bump NimBLE Arduino version to 2.3.3
+- Remove TaskManagerIO dependency in example code (currently not supporting Arduino 3.x)
+
 # [0.3.0] 2025-06-08
 - Add `uuid_to_ble_address()`
 

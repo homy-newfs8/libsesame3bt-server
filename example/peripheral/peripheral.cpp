@@ -3,8 +3,8 @@
 #include <Preferences.h>
 #include <Sesame.h>
 #include <SesameServer.h>
-#include <TaskManagerIO.h>
 #include <libsesame3bt/util.h>
+#include <mutex>
 #if __has_include("mysesame-config.h")
 #include "mysesame-config.h"
 #endif
@@ -48,6 +48,10 @@ NimBLEAddress my_addr{SESAME_SERVER_ADDRESS, BLE_ADDR_RANDOM};
 SesameServer server{SESAME_SERVER_MAX_SESSIONS};
 
 bool initialized;
+
+std::mutex status_mutex;
+bool status_updated;
+bool status;
 
 namespace {
 
@@ -125,8 +129,9 @@ on_command(NimBLEAddress addr,
 	              trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
 	              addr.toString().c_str());
 	if (cmd == Sesame::item_code_t::lock || cmd == Sesame::item_code_t::unlock) {
-		bool locked = cmd == Sesame::item_code_t::lock;
-		taskManager.schedule(onceSeconds(0), [locked]() { server.send_lock_status(locked); });
+		std::lock_guard<std::mutex> lock(status_mutex);
+		status = cmd == Sesame::item_code_t::lock;
+		status_updated = true;
 	}
 	return Sesame::result_code_t::success;
 }
@@ -175,6 +180,12 @@ loop() {
 		last_reported = millis();
 	}
 	server.update();
-	taskManager.runLoop();
+	{
+		std::lock_guard<std::mutex> lock(status_mutex);
+		if (status_updated) {
+			status_updated = false;
+			server.send_lock_status(status);
+		}
+	}
 	delay(100);
 }
