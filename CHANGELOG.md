@@ -1,5 +1,8 @@
 # Changelog
 
+# [v0.5.0] 2025-09-07
+- Bump libsesame3bt-core version to 0.13.0
+
 # [v0.4.0] 2025-08-09
 - Supports Arduino ESP32 3.x in addition to 2.x.
 - Bump NimBLE Arduino version to 2.3.3
