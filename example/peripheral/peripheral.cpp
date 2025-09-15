@@ -149,7 +149,7 @@ setup() {
 		server.set_on_registration_callback(on_registration);
 	}
 	server.set_on_command_callback(on_command);
-	if (!server.begin(Sesame::model_t::sesame_5, my_addr, my_uuid)) {
+	if (!server.begin(Sesame::model_t::sesame_5, my_uuid)) {
 		Serial.println("initialization failed");
 		return;
 	}

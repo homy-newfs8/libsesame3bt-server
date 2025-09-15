@@ -5,11 +5,11 @@ BLE上でSESAME 5っぽく見えるような動作をするESP32用ライブラ�
 ESP32シリーズで動作します。
 
 # 必要なもの
-- 適切なUUIDとBLEアドレスの組<br/>
-SESAME 5以降の機種ではBLEアドレスとしてUUIDから算出可能な値を使う仕様になっています(Remote/Touch等は操作対象デバイスのUUIDを保持しており、操作時にはBTスキャンを実行せずに算出されたアドレスに接続します)。<br/>
-サーバーで使用するUUIDとBLEアドレスの組を指定する場合は、まず適当なツールでUUIDを生成し、後に[example/uuid_to_btaddr](../example/uuid_to_btaddr/uuid_to_btaddr.cpp)を使用してBLEアドレスを算出して使用してください。
-- ESP32シリーズ<br/>
+- ESP32シリーズ\
 基本的に[Arduino core for ESP32](https://github.com/espressif/arduino-esp32)がサポートするESP32シリーズはどれでも動作すると思われます。私はArduino core v2.0系を使い、ESP32 C3やESP32 S3で動作確認しています。
+- 適当なUUID\
+SESAME 5以降の機種ではBLEアドレスとしてUUIDから算出可能な値を使う仕様になっています(Remote/Touch等は操作対象デバイスのUUIDを保持しており、操作時にはBTスキャンを実行せずに算出されたアドレスに接続します)。他に使っているSESAMEのUUIDとの衝突はないようにしてください。\
+サーバーで使用するUUIDを`SesameServer::begin()`に指定すると、計算で求めたBTアドレスを使ってサーバーとして動作します。
 
 # 使い方
 [example/peripheral](../example/peripheral/peripheral.cpp)を見てください。

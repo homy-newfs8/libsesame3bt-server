@@ -8,7 +8,12 @@ namespace libsesame3bt {
 namespace util = libsesame3bt::core::util;
 
 bool
-SesameServer::begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& my_uuid) {
+SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
+	auto server_address = SesameServer::uuid_to_ble_address(my_uuid);
+	if (server_address.isNull()) {
+		DEBUG_PRINTLN("Failed to convert UUID to BLE address");
+		return false;
+	}
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
 	core.set_on_command_callback(
 	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<trigger_type_t> trigger_type) {

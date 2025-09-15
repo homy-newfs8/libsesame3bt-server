@@ -24,7 +24,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	SesameServer(const SesameServer&) = delete;
 	virtual ~SesameServer() {}
 
-	bool begin(Sesame::model_t model, const NimBLEAddress& server_address, const NimBLEUUID& uuid);
+	bool begin(Sesame::model_t model, const NimBLEUUID& uuid);
 	bool start_advertising();
 	bool stop_advertising();
 	void update();

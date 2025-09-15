@@ -1,5 +1,8 @@
 # Changelog
 
+# [v0.6.0] 2025-09-15
+- Remove server_address parameter from SesameServer::begin(). The address will be calculated automatically.
+
 # [v0.5.0] 2025-09-07
 - Bump libsesame3bt-core version to 0.13.0
 
