@@ -64,6 +64,29 @@ SesameServer::update() {
 	core.update();
 }
 
+/**
+ * @brief Send mecha_status to a specific device or all connected devices.
+ *
+ * @param address The address of the device to send the status to. If nullptr, send to all connected devices.
+ * @param status The mecha_status_5_t structure containing the status information.
+ * @return true If the status was sent successfully.
+ * @return false If there was an error sending the status.
+ */
+bool
+SesameServer::send_mecha_status(const NimBLEAddress* address, const Sesame::mecha_status_5_t& status) {
+	if (address == nullptr) {
+		return send_notify({}, Sesame::op_code_t::publish, Sesame::item_code_t::mech_status,
+		                   reinterpret_cast<const std::byte*>(&status), sizeof(status));
+	}
+	auto session_id = get_session_id(*address);
+	if (!session_id.has_value()) {
+		DEBUG_PRINTLN("No session for address %s", address->toString().c_str());
+		return false;
+	}
+	return send_notify(*session_id, Sesame::op_code_t::publish, Sesame::item_code_t::mech_status,
+	                   reinterpret_cast<const std::byte*>(&status), sizeof(status));
+}
+
 bool
 SesameServer::send_lock_status(bool locked) {
 	Sesame::mecha_status_5_t status{};
@@ -84,6 +107,9 @@ void
 SesameServer::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
 	DEBUG_PRINTLN("Disconnected from = %s", connInfo.getAddress().toString().c_str());
 	core.on_disconnected(connInfo.getConnHandle());
+	if (disconnect_callback) {
+		disconnect_callback(connInfo.getAddress(), reason);
+	}
 }
 
 bool
@@ -111,7 +137,11 @@ SesameServer::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo&
 	}
 	DEBUG_PRINTLN("Subscribed from=%s, val=%u", connInfo.getAddress().toString().c_str(), subValue);
 	if ((subValue & 1)) {
-		if (!core.on_subscribed(connInfo.getConnHandle())) {
+		if (core.on_subscribed(connInfo.getConnHandle())) {
+			if (connect_callback) {
+				connect_callback(connInfo.getAddress());
+			}
+		} else {
 			ble_server->disconnect(connInfo);
 		}
 	}
@@ -195,11 +225,11 @@ SesameServer::set_advertising_data() {
 
 void
 SesameServer::disconnect(const NimBLEAddress& addr) {
-	auto conn = ble_server->getPeerInfo(addr);
-	if (!conn.getAddress().isNull()) {
+	auto session_id = get_session_id(addr);
+	if (session_id.has_value()) {
 		// 切断理由をデフォルト値のBLE_ERR_REM_USER_CONN_TERMを使うと、Touchの登録から削除されてしまう模様
 		// BLE_ERR_CONN_TERM_LOCALを使うと、Remoteの登録から削除されてしまう模様..
-		ble_server->disconnect(conn.getConnHandle(), BLE_ERR_RD_CONN_TERM_RESRCS);
+		ble_server->disconnect(*session_id, BLE_ERR_RD_CONN_TERM_RESRCS);
 	} else {
 		DEBUG_PRINTLN("No connection found for address %s", addr.toString().c_str());
 	}
@@ -225,6 +255,15 @@ bool
 SesameServer::has_session(const NimBLEAddress& addr) const {
 	auto conn = ble_server->getPeerInfo(addr);
 	return !conn.getAddress().isNull() && core.has_session(conn.getConnHandle());
+}
+
+std::optional<uint16_t>
+SesameServer::get_session_id(const NimBLEAddress& addr) const {
+	auto conn = ble_server->getPeerInfo(addr);
+	if (conn.getAddress().isNull() || !core.has_session(conn.getConnHandle())) {
+		return std::nullopt;
+	}
+	return conn.getConnHandle();
 }
 
 }  // namespace libsesame3bt

@@ -17,6 +17,8 @@ using command_callback_t = std::function<Sesame::result_code_t(const NimBLEAddre
                                                                Sesame::item_code_t cmd,
                                                                const std::string& tag,
                                                                std::optional<trigger_type_t> trigger_type)>;
+using connect_callback_t = std::function<void(const NimBLEAddress& addr)>;
+using disconnect_callback_t = std::function<void(const NimBLEAddress& addr, int reason)>;
 
 class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristicCallbacks, private core::ServerBLEBackend {
  public:
@@ -31,9 +33,13 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) { return core.set_registered(secret); }
 	void set_on_registration_callback(registration_callback_t callback) { registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }
+	void set_on_connect_callback(connect_callback_t callback) { connect_callback = callback; }
+	void set_on_disconnect_callback(disconnect_callback_t callback) { disconnect_callback = callback; }
 	size_t get_session_count() { return core.get_session_count(); }
 	bool is_registered() const { return core.is_registered(); }
 	bool send_lock_status(bool locked);
+	bool send_mecha_status(const NimBLEAddress* address, const Sesame::mecha_status_5_t& status);
+
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
 
@@ -45,8 +51,10 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	NimBLEService* srv = nullptr;
 	NimBLECharacteristic* tx = nullptr;
 	NimBLECharacteristic* rx = nullptr;
-	registration_callback_t registration_callback;
-	command_callback_t command_callback;
+	registration_callback_t registration_callback = nullptr;
+	command_callback_t command_callback = nullptr;
+	connect_callback_t connect_callback = nullptr;
+	disconnect_callback_t disconnect_callback = nullptr;
 
 	core::SesameServerCore core;
 
@@ -70,6 +78,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 		return core.send_notify(session_id, op_code, item_code, data, size);
 	}
 	bool set_advertising_data();
+	std::optional<uint16_t> get_session_id(const NimBLEAddress& addr) const;
 };
 
 }  // namespace libsesame3bt

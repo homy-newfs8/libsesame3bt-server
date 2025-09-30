@@ -1,6 +1,6 @@
 {
 	"name": "libsesame3bt-server",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Bluetooth LE server (peripheral) for CANDY HOUSE SESAME Remote.",
 	"license": "MIT",
 	"frameworks": "Arduino",
