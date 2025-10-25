@@ -22,7 +22,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 
 	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
 	    !NimBLEDevice::setOwnAddr(server_address)) {
-		Serial.println("Failed to init BLE");
+		DEBUG_PRINTLN("Failed to init BLE");
 		return false;
 	}
 
@@ -90,8 +90,10 @@ SesameServer::send_mecha_status(const NimBLEAddress* address, const Sesame::mech
 bool
 SesameServer::send_lock_status(bool locked) {
 	Sesame::mecha_status_5_t status{};
-	status.battery = 10;
+	status.battery = 6 * 500;
 	status.in_lock = locked;
+	status.in_unlock = !locked;
+	status.target = -32768;
 	status.is_stop = true;
 	return send_notify({}, Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, reinterpret_cast<std::byte*>(&status),
 	                   sizeof(status));

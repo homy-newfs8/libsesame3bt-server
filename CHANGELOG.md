@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.8.0] 2025-10-25
+- Set in_unlock flag properly in `send_lock_status()`, also modified some status values.
+- Remove unintended Arduino dependency.
+
 ## [v0.7.0] 2025-09-30
 - Add connect/disconnect callback.
 - Add send_mecha_status().
