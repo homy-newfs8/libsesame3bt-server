@@ -39,6 +39,8 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool is_registered() const { return core.is_registered(); }
 	bool send_lock_status(bool locked);
 	bool send_mecha_status(const NimBLEAddress* address, const Sesame::mecha_status_5_t& status);
+	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { core.set_mecha_setting(setting); }
+	void set_mecha_status(const Sesame::mecha_status_5_t& status) { core.set_mecha_status(status); }
 
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
