@@ -16,7 +16,7 @@ using registration_callback_t =
 using command_callback_t = std::function<Sesame::result_code_t(const NimBLEAddress& addr,
                                                                Sesame::item_code_t cmd,
                                                                const std::string& tag,
-                                                               std::optional<trigger_type_t> trigger_type)>;
+                                                               std::optional<history_tag_type_t> trigger_type)>;
 using connect_callback_t = std::function<void(const NimBLEAddress& addr)>;
 using disconnect_callback_t = std::function<void(const NimBLEAddress& addr, int reason)>;
 
@@ -71,7 +71,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	Sesame::result_code_t on_command(uint16_t session_id,
 	                                 Sesame::item_code_t cmd,
 	                                 const std::string& tag,
-	                                 std::optional<trigger_type_t> trigger_type);
+	                                 std::optional<history_tag_type_t> trigger_type);
 	bool send_notify(std::optional<uint16_t> session_id,
 	                 Sesame::op_code_t op_code,
 	                 Sesame::item_code_t item_code,

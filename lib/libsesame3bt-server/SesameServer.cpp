@@ -16,7 +16,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	}
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
 	core.set_on_command_callback(
-	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<trigger_type_t> trigger_type) {
+	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<history_tag_type_t> trigger_type) {
 		    return on_command(session_id, cmd, tag, trigger_type);
 	    });
 
@@ -205,7 +205,7 @@ Sesame::result_code_t
 SesameServer::on_command(uint16_t session_id,
                          Sesame::item_code_t cmd,
                          const std::string& tag,
-                         std::optional<trigger_type_t> trigger_type) {
+                         std::optional<history_tag_type_t> trigger_type) {
 	if (command_callback) {
 		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag, trigger_type);
 	} else {
