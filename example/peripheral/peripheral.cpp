@@ -124,7 +124,7 @@ Sesame::result_code_t
 on_command(NimBLEAddress addr,
            Sesame::item_code_t cmd,
            const std::string& tag,
-           std::optional<libsesame3bt::trigger_type_t> trigger_type) {
+           std::optional<libsesame3bt::history_tag_type_t> trigger_type) {
 	Serial.printf("receive command = %u (%s: %s) from %s\n", static_cast<uint8_t>(cmd),
 	              trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
 	              addr.toString().c_str());

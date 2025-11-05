@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.9.0] 2025-11-05
+- Bump libsesame3bt-core
+- Use renamed type `history_tag_type_t`.
+
 ## [v0.8.0] 2025-10-25
 - Set in_unlock flag properly in `send_lock_status()`, also modified some status values.
 - Remove unintended Arduino dependency.
