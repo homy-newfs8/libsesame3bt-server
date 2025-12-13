@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.9.1] 2025-12-13
+- Do not drop UUID history tag with extra data. Extra data is not handled yet (may be battery voltages).
+
 ## [v0.9.0] 2025-11-05
 - Bump libsesame3bt-core
 - Use renamed type `history_tag_type_t`.
