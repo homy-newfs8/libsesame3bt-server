@@ -149,6 +149,15 @@ setup() {
 		server.set_on_registration_callback(on_registration);
 	}
 	server.set_on_command_callback(on_command);
+	// ログイン完了時にmecha_statusを送信するコールバックを設定
+	server.set_on_login_callback([](const NimBLEAddress& addr) {
+		Serial.printf("login from: %s, sending mecha_status\n", addr.toString().c_str());
+		if (!server.send_mecha_status(&addr, Sesame::mecha_status_5_t{})) {
+			Serial.println("Failed to send mecha_status");
+		}
+	});
+	// 上記のon_loginコールバックでmecha_statusを送信するため、mecha_statusの自動送信は無効にする
+	server.set_auto_send_flags(libsesame3bt::auto_send::flags::mecha_setting);
 	if (!server.begin(Sesame::model_t::sesame_5, my_uuid)) {
 		Serial.println("initialization failed");
 		return;

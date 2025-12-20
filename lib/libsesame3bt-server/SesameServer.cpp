@@ -19,6 +19,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<history_tag_type_t> trigger_type) {
 		    return on_command(session_id, cmd, tag, trigger_type);
 	    });
+	core.set_on_login_callback([this](uint16_t session_id) { on_login(session_id); });
 
 	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
 	    !NimBLEDevice::setOwnAddr(server_address)) {
@@ -186,6 +187,13 @@ SesameServer::disconnect(uint16_t session_id) {
 	DEBUG_PRINTLN("Disconnecting session %u", session_id);
 	if (ble_server->disconnect(session_id) != 0) {
 		DEBUG_PRINTLN("Failed to disconnect session %u", session_id);
+	}
+}
+
+void
+SesameServer::on_login(uint16_t session_id) {
+	if (login_callback) {
+		login_callback(ble_server->getPeerInfoByHandle(session_id).getAddress());
 	}
 }
 

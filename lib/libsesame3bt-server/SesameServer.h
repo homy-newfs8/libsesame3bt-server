@@ -19,6 +19,9 @@ using command_callback_t = std::function<Sesame::result_code_t(const NimBLEAddre
                                                                std::optional<history_tag_type_t> trigger_type)>;
 using connect_callback_t = std::function<void(const NimBLEAddress& addr)>;
 using disconnect_callback_t = std::function<void(const NimBLEAddress& addr, int reason)>;
+using login_callback_t = std::function<void(const NimBLEAddress& addr)>;
+
+namespace auto_send = core::auto_send;
 
 class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristicCallbacks, private core::ServerBLEBackend {
  public:
@@ -35,12 +38,14 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }
 	void set_on_connect_callback(connect_callback_t callback) { connect_callback = callback; }
 	void set_on_disconnect_callback(disconnect_callback_t callback) { disconnect_callback = callback; }
+	void set_on_login_callback(login_callback_t callback) { login_callback = callback; }
 	size_t get_session_count() { return core.get_session_count(); }
 	bool is_registered() const { return core.is_registered(); }
 	bool send_lock_status(bool locked);
 	bool send_mecha_status(const NimBLEAddress* address, const Sesame::mecha_status_5_t& status);
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { core.set_mecha_setting(setting); }
 	void set_mecha_status(const Sesame::mecha_status_5_t& status) { core.set_mecha_status(status); }
+	void set_auto_send_flags(auto_send::flags flags) { core.set_auto_send_flags(flags); }
 
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
@@ -57,6 +62,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	command_callback_t command_callback = nullptr;
 	connect_callback_t connect_callback = nullptr;
 	disconnect_callback_t disconnect_callback = nullptr;
+	login_callback_t login_callback = nullptr;
 
 	core::SesameServerCore core;
 
@@ -68,6 +74,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) override;
 	virtual void disconnect(uint16_t session_id) override;
 	void on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
+	void on_login(uint16_t session_id);
 	Sesame::result_code_t on_command(uint16_t session_id,
 	                                 Sesame::item_code_t cmd,
 	                                 const std::string& tag,
