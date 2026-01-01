@@ -1,5 +1,9 @@
 # Changelog
 
+# [v0.10.0] 2026-01-XX
+- Add `set_auto_send_flags()` and `set_on_login_callback()` (see example/peripheral for usage).
+- Add `scaled_voltage` parameter to `command_callback_t` (breaking change).
+
 ## [v0.9.1] 2025-12-13
 - Do not drop UUID history tag with extra data. Extra data is not handled yet (may be battery voltages).
 

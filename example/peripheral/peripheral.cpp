@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <Sesame.h>
 #include <SesameServer.h>
+#include <libsesame3bt/ClientCore.h>
 #include <libsesame3bt/util.h>
 #include <mutex>
 #if __has_include("mysesame-config.h")
@@ -40,6 +41,7 @@
 
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameServer;
+using libsesame3bt::core::Status;
 namespace util = libsesame3bt::core::util;
 
 NimBLEUUID my_uuid{SESAME_SERVER_UUID};
@@ -124,10 +126,15 @@ Sesame::result_code_t
 on_command(NimBLEAddress addr,
            Sesame::item_code_t cmd,
            const std::string& tag,
-           std::optional<libsesame3bt::history_tag_type_t> trigger_type) {
-	Serial.printf("receive command = %u (%s: %s) from %s\n", static_cast<uint8_t>(cmd),
-	              trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
-	              addr.toString().c_str());
+           std::optional<libsesame3bt::history_tag_type_t> trigger_type,
+           float scaled_voltage) {
+	Serial.printf(
+	    "receive command = %u (%s: %s) from %s, svolt=%s, pct=%s, pct(opensensor)=%s\n", static_cast<uint8_t>(cmd),
+	    trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
+	    addr.toString().c_str(), isnan(scaled_voltage) ? "N/A" : String(scaled_voltage, 2).c_str(),
+	    isnan(scaled_voltage) ? "N/A" : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::sesame_5), 2).c_str(),
+	    isnan(scaled_voltage) ? "N/A"
+	                          : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::open_sensor_1), 2).c_str());
 	if (cmd == Sesame::item_code_t::lock || cmd == Sesame::item_code_t::unlock) {
 		std::lock_guard<std::mutex> lock(status_mutex);
 		status = cmd == Sesame::item_code_t::lock;
