@@ -74,6 +74,10 @@ constexpr uint8_t reset_button_pin = 41;
  */
 bool
 prepare_secret() {
+#ifdef SESAME_SERVER_SECRET
+	std::array<std::byte, Sesame::SECRET_SIZE> secret;
+	return util::hex2bin(SESAME_SERVER_SECRET, secret) && server.set_registered(secret);
+#else
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
 		Serial.println("Failed to init prefs");
@@ -95,6 +99,7 @@ prepare_secret() {
 		}
 	}
 	return true;
+#endif
 }
 
 /*
