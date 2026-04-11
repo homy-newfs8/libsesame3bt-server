@@ -1,6 +1,10 @@
 # Changelog
 
-# [v0.10.0] 2026-01-03
+## [v0.11.0] 2026-04-11
+- Bump NimBLE version for recent platform compatibility.
+- Remove useless start() call on services.
+
+## [v0.10.0] 2026-01-03
 - Add `set_auto_send_flags()` and `set_on_login_callback()` (see example/peripheral for usage).
 - Add `scaled_voltage` parameter to `command_callback_t` (breaking change).
 

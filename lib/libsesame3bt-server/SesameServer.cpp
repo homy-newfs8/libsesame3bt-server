@@ -47,10 +47,8 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	rx->setCallbacks(this);
 	tx = srv->createCharacteristic(NimBLEUUID(Sesame::RxUUID), NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ);
 	tx->setCallbacks(this);
-	srv->start();
 	// create dummy service to limit end handle value of CANDY HOUSE service group (SESAME3_SRV_UUID(0xfd81))
 	auto srv2 = ble_server->createService(NimBLEUUID(static_cast<uint32_t>(0xfefefefe)));
-	srv2->start();
 	ble_server->start();
 
 	return true;
