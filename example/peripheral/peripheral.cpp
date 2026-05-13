@@ -11,17 +11,11 @@
 #endif
 
 /*
- * UUIDとBLE Addressは何らかの法則に従った値の組み合わせが必要と思われます。
- * 適当に生成した値を使うと Remote 等のデバイスが接続してこなくなります。
+ * サーバーはUUIDから生成されたBLE Addressで動作します。
  */
 /* SESAME DEVICE UUID in format 12345678-90ab-cdef-1234-567890abcdef */
 #ifndef SESAME_SERVER_UUID
 #define SESAME_SERVER_UUID "***Replace this***"
-#endif
-
-/* BLE address in format 01:02:03:04:05:06 */
-#ifndef SESAME_SERVER_ADDRESS
-#define SESAME_SERVER_ADDRESS "***Replace this***"
 #endif
 
 /*
@@ -45,7 +39,6 @@ using libsesame3bt::core::Status;
 namespace util = libsesame3bt::core::util;
 
 NimBLEUUID my_uuid{SESAME_SERVER_UUID};
-NimBLEAddress my_addr{SESAME_SERVER_ADDRESS, BLE_ADDR_RANDOM};
 
 SesameServer server{SESAME_SERVER_MAX_SESSIONS};
 
@@ -132,11 +125,14 @@ on_command(NimBLEAddress addr,
            Sesame::item_code_t cmd,
            const std::string& tag,
            std::optional<libsesame3bt::history_tag_type_t> trigger_type,
-           float scaled_voltage) {
+           float scaled_voltage,
+           float scaled_voltage2,
+           std::string_view extra) {
 	Serial.printf(
-	    "receive command = %u (%s: %s) from %s, svolt=%s, pct=%s, pct(opensensor)=%s\n", static_cast<uint8_t>(cmd),
+	    "receive command = %u (%s: %s) from %s, svolt=%s, svolt2=%s, pct=%s, pct(opensensor)=%s\n", static_cast<uint8_t>(cmd),
 	    trigger_type.has_value() ? std::to_string(static_cast<uint8_t>(*trigger_type)).c_str() : "str", tag.c_str(),
 	    addr.toString().c_str(), isnan(scaled_voltage) ? "N/A" : String(scaled_voltage, 2).c_str(),
+	    isnan(scaled_voltage2) ? "N/A" : String(scaled_voltage2, 2).c_str(),
 	    isnan(scaled_voltage) ? "N/A" : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::sesame_5), 2).c_str(),
 	    isnan(scaled_voltage) ? "N/A"
 	                          : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::open_sensor_1), 2).c_str());
@@ -150,13 +146,18 @@ on_command(NimBLEAddress addr,
 
 void
 setup() {
-	delay(5000);
 	Serial.begin(115200);
+	delay(5000);
 
 	if (!prepare_secret()) {
 		return;
 	}
-	Serial.printf("my uuid = %s\n", my_uuid.toString().c_str());
+	auto addr = SesameServer::uuid_to_ble_address(my_uuid);
+	if (addr.isNull()) {
+		Serial.println("Failed to convert UUID to BLE address");
+		return;
+	}
+	Serial.printf("my uuid = %s, addr = %s\n", my_uuid.toString().c_str(), addr.toString().c_str());
 	if (!server.is_registered()) {
 		server.set_on_registration_callback(on_registration);
 	}
@@ -174,7 +175,7 @@ setup() {
 		Serial.println("initialization failed");
 		return;
 	}
-	auto addr = NimBLEDevice::getAddress();
+	addr = NimBLEDevice::getAddress();
 	Serial.printf("my address = %s(%u)\n", addr.toString().c_str(), addr.getType());
 	if (!server.start_advertising()) {
 		Serial.println("Start advertisement failed");

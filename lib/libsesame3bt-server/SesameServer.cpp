@@ -15,9 +15,11 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 		return false;
 	}
 	core.set_on_registration_callback([this](auto session_id, const auto& secret) { on_registration(session_id, secret); });
-	core.set_on_command_callback(
-	    [this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag, std::optional<history_tag_type_t> trigger_type,
-	           float scaled_voltage) { return on_command(session_id, cmd, tag, trigger_type, scaled_voltage); });
+	core.set_on_command_callback([this](uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag,
+	                                    std::optional<history_tag_type_t> trigger_type, float scaled_voltage, float scaled_voltage2,
+	                                    std::string_view extra) {
+		return on_command(session_id, cmd, tag, trigger_type, scaled_voltage, scaled_voltage2, extra);
+	});
 	core.set_on_login_callback([this](uint16_t session_id) { on_login(session_id); });
 
 	if (!NimBLEDevice::init("Peripheral Demo") || !NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM) ||
@@ -48,7 +50,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	tx = srv->createCharacteristic(NimBLEUUID(Sesame::RxUUID), NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ);
 	tx->setCallbacks(this);
 	// create dummy service to limit end handle value of CANDY HOUSE service group (SESAME3_SRV_UUID(0xfd81))
-	auto srv2 = ble_server->createService(NimBLEUUID(static_cast<uint32_t>(0xfefefefe)));
+	ble_server->createService(NimBLEUUID(static_cast<uint32_t>(0xfefefefe)));
 	ble_server->start();
 
 	return true;
@@ -211,9 +213,12 @@ SesameServer::on_command(uint16_t session_id,
                          Sesame::item_code_t cmd,
                          const std::string& tag,
                          std::optional<history_tag_type_t> trigger_type,
-                         float scaled_voltage) {
+                         float scaled_voltage,
+                         float scaled_voltage2,
+                         std::string_view extra) {
 	if (command_callback) {
-		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag, trigger_type, scaled_voltage);
+		return command_callback(ble_server->getPeerInfoByHandle(session_id).getAddress(), cmd, tag, trigger_type, scaled_voltage,
+		                        scaled_voltage2, extra);
 	} else {
 		return Sesame::result_code_t::not_supported;
 	}
