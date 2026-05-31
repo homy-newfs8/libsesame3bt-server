@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.12.0] 2026-05-31
+- API Changes
+  - Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
+
 ## [v0.11.0] 2026-04-11
 - Bump NimBLE version for recent platform compatibility.
 - Remove useless start() call on services.

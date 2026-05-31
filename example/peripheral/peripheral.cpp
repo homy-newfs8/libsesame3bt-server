@@ -136,6 +136,11 @@ on_command(NimBLEAddress addr,
 	    isnan(scaled_voltage) ? "N/A" : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::sesame_5), 2).c_str(),
 	    isnan(scaled_voltage) ? "N/A"
 	                          : String(Status::scaled_voltage_to_pct(scaled_voltage, Sesame::model_t::open_sensor_1), 2).c_str());
+	if (extra.size() > 0) {
+		Serial.printf("extra = %s\n", libsesame3bt::core::util::bin2hex(extra.data(), extra.size()).c_str());
+	} else {
+		Serial.println("extra = N/A");
+	}
 	if (cmd == Sesame::item_code_t::lock || cmd == Sesame::item_code_t::unlock) {
 		std::lock_guard<std::mutex> lock(status_mutex);
 		status = cmd == Sesame::item_code_t::lock;
