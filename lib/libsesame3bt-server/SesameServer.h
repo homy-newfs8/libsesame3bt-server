@@ -23,6 +23,7 @@ using command_callback_t = std::function<Sesame::result_code_t(const NimBLEAddre
 using connect_callback_t = std::function<void(const NimBLEAddress& addr)>;
 using disconnect_callback_t = std::function<void(const NimBLEAddress& addr, int reason)>;
 using login_callback_t = std::function<void(const NimBLEAddress& addr)>;
+using connect_check_callback_t = std::function<bool(const NimBLEAddress& addr)>;
 
 namespace auto_send = core::auto_send;
 
@@ -49,9 +50,9 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { core.set_mecha_setting(setting); }
 	void set_mecha_status(const Sesame::mecha_status_5_t& status) { core.set_mecha_status(status); }
 	void set_auto_send_flags(auto_send::flags flags) { core.set_auto_send_flags(flags); }
-
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
+	void set_connect_check_callback(connect_check_callback_t callback) { connect_check_callback = callback; }
 
 	static NimBLEAddress uuid_to_ble_address(const NimBLEUUID& uuid);
 
@@ -66,6 +67,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	connect_callback_t connect_callback = nullptr;
 	disconnect_callback_t disconnect_callback = nullptr;
 	login_callback_t login_callback = nullptr;
+	connect_check_callback_t connect_check_callback = nullptr;
 
 	core::SesameServerCore core;
 
@@ -94,6 +96,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	}
 	bool set_advertising_data();
 	std::optional<uint16_t> get_session_id(const NimBLEAddress& addr) const;
+	bool is_addr_permitted(const NimBLEAddress& addr) const;
 };
 
 }  // namespace libsesame3bt

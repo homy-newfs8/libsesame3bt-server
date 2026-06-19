@@ -99,9 +99,19 @@ SesameServer::send_lock_status(bool locked) {
 	                   sizeof(status));
 }
 
+bool
+SesameServer::is_addr_permitted(const NimBLEAddress& addr) const {
+	return !connect_check_callback || connect_check_callback(addr);
+}
+
 void
 SesameServer::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
 	DEBUG_PRINTLN("Connected from = %s", connInfo.getAddress().toString().c_str());
+	if (!is_addr_permitted(connInfo.getAddress())) {
+		DEBUG_PRINTLN("Address %s is not permitted, disconnecting", connInfo.getAddress().toString().c_str());
+		pServer->disconnect(connInfo);
+		return;
+	}
 	start_advertising();
 }
 
