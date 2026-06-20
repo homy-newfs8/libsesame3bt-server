@@ -5,6 +5,16 @@
 
 namespace libsesame3bt {
 
+namespace {
+// サーバー側から切断する場合、切断理由をNimBLEデフォルト値のBLE_ERR_REM_USER_CONN_TERMとすると SESAME Touch/Remoteから登録解除されてしまうようだ。
+// BLE_ERR_CONN_TERM_LOCALも同様になることが観測された。
+
+// 一時的な切断なのでトリガーデバイスからは登録解除されないようにする際に使用する
+static constexpr int BLE_DISCONNECT_REASON_RETAIN = BLE_ERR_RD_CONN_TERM_RESRCS;
+// トリガーデバイスからの登録解除を促す際に使用する
+static constexpr int BLE_DISCONNECT_REASON_UNREGISTER = BLE_ERR_REM_USER_CONN_TERM;
+}  // namespace
+
 namespace util = libsesame3bt::core::util;
 
 bool
@@ -109,8 +119,7 @@ SesameServer::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
 	DEBUG_PRINTLN("Connected from = %s", connInfo.getAddress().toString().c_str());
 	if (!is_addr_permitted(connInfo.getAddress())) {
 		DEBUG_PRINTLN("Address %s is not permitted, disconnecting", connInfo.getAddress().toString().c_str());
-		pServer->disconnect(connInfo);
-		return;
+		pServer->disconnect(connInfo, BLE_DISCONNECT_REASON_UNREGISTER);
 	}
 	start_advertising();
 }
@@ -144,7 +153,7 @@ void
 SesameServer::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
 	if (pCharacteristic != tx) {
 		DEBUG_PRINTLN("Unexpected endpoint subscribed");
-		ble_server->disconnect(connInfo);
+		ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_UNREGISTER);
 		return;
 	}
 	DEBUG_PRINTLN("Subscribed from=%s, val=%u", connInfo.getAddress().toString().c_str(), subValue);
@@ -154,7 +163,7 @@ SesameServer::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo&
 				connect_callback(connInfo.getAddress());
 			}
 		} else {
-			ble_server->disconnect(connInfo);
+			ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_UNREGISTER);
 		}
 	}
 }
@@ -174,7 +183,7 @@ SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& con
 		auto val = pCharacteristic->getValue();
 		if (!core.on_received(connInfo.getConnHandle(), reinterpret_cast<const std::byte*>(val.data()), val.size())) {
 			DEBUG_PRINTLN("core.on_received failed, disconnect");
-			ble_server->disconnect(connInfo);
+			ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_RETAIN);
 		}
 	} else if (pCharacteristic == tx) {
 		DEBUG_PRINTLN("onWrite TX(ignored)");
@@ -189,14 +198,6 @@ SesameServer::write_to_central(uint16_t session_id, const uint8_t* data, size_t 
 	}
 	DEBUG_PRINTLN("TX characteristic not created, cannot proceed");
 	return false;
-}
-
-void
-SesameServer::disconnect(uint16_t session_id) {
-	DEBUG_PRINTLN("Disconnecting session %u", session_id);
-	if (ble_server->disconnect(session_id) != 0) {
-		DEBUG_PRINTLN("Failed to disconnect session %u", session_id);
-	}
 }
 
 void
@@ -247,12 +248,18 @@ SesameServer::set_advertising_data() {
 }
 
 void
+SesameServer::disconnect(uint16_t session_id) {
+	DEBUG_PRINTLN("Disconnecting session %u", session_id);
+	if (ble_server->disconnect(session_id, BLE_DISCONNECT_REASON_RETAIN) != 0) {
+		DEBUG_PRINTLN("Failed to disconnect session %u", session_id);
+	}
+}
+
+void
 SesameServer::disconnect(const NimBLEAddress& addr) {
 	auto session_id = get_session_id(addr);
 	if (session_id.has_value()) {
-		// 切断理由をデフォルト値のBLE_ERR_REM_USER_CONN_TERMを使うと、Touchの登録から削除されてしまう模様
-		// BLE_ERR_CONN_TERM_LOCALを使うと、Remoteの登録から削除されてしまう模様..
-		ble_server->disconnect(*session_id, BLE_ERR_RD_CONN_TERM_RESRCS);
+		ble_server->disconnect(*session_id, BLE_DISCONNECT_REASON_RETAIN);
 	} else {
 		DEBUG_PRINTLN("No connection found for address %s", addr.toString().c_str());
 	}
