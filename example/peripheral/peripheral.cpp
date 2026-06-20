@@ -61,6 +61,20 @@ constexpr uint8_t reset_button_pin = 41;
 
 }  // namespace
 
+static const uint8_t deny_address[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+
+/*
+ * 接続元デバイスのBLEアドレスを見て接続を拒否する
+*/
+bool
+check_address(const NimBLEAddress& addr) {
+	if (addr == NimBLEAddress(deny_address, BLE_ADDR_RANDOM)) {
+		Serial.println("connection rejected");
+		return false;
+	}
+	return true;
+}
+
 /*
  * NVSに保存してある共有鍵をロードする
  * 共有鍵がない場合は未登録デバイスとしてふるまう
@@ -176,6 +190,7 @@ setup() {
 	});
 	// 上記のon_loginコールバックでmecha_statusを送信するため、mecha_statusの自動送信は無効にする
 	server.set_auto_send_flags(libsesame3bt::auto_send::flags::mecha_setting);
+	server.set_connect_check_callback(check_address);
 	if (!server.begin(Sesame::model_t::sesame_5, my_uuid)) {
 		Serial.println("initialization failed");
 		return;
