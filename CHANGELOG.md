@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.13.0] 2026-06-28
+- Add `set_connect_check_callback()` to reject connections based on the BLE address.
+
 ## [v0.12.0] 2026-05-31
 - API Changes
   - Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
