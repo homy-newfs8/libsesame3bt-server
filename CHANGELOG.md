@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.13.1] 2026-06-30
+- Bump libsesame3bt-core version to v0.18.1
+
 ## [v0.13.0] 2026-06-28
 - Add `set_connect_check_callback()` to reject connections based on the BLE address.
 
