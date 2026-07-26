@@ -4,4 +4,4 @@ idf_component_register(
 	SRCS
 		"lib/libsesame3bt-server/SesameServer.cpp"
 	INCLUDE_DIRS
-		"lib/libsesame3bt")
+		"lib/libsesame3bt-server")
