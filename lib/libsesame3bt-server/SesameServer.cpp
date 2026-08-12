@@ -1,6 +1,7 @@
 #include "SesameServer.h"
 #include <libsesame3bt/ScannerCore.h>
 #include <libsesame3bt/util.h>
+#include <tuple>
 #include "debug.h"
 
 namespace libsesame3bt {
@@ -41,7 +42,7 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	auto r_uuid = my_uuid;
 	r_uuid.to128();
 	r_uuid.reverseByteOrder();
-	if (!core.begin(model, *reinterpret_cast<const uint8_t (*)[16]>(r_uuid.getValue()))) {
+	if (core.begin(model, *reinterpret_cast<const uint8_t (*)[16]>(r_uuid.getValue())) != core::result_t::success) {
 		return false;
 	}
 
@@ -71,7 +72,12 @@ SesameServer::update() {
 	if (!ble_server) {
 		return;
 	}
-	core.update();
+	auto [id, result] = core.update(update_handle);
+	if (id.has_value()) {
+		if (result != core::result_t::success) {
+			disconnect(*id);
+		}
+	}
 }
 
 /**
@@ -156,14 +162,14 @@ SesameServer::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo&
 		ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_UNREGISTER);
 		return;
 	}
-	DEBUG_PRINTLN("Subscribed from=%s, val=%u", connInfo.getAddress().toString().c_str(), subValue);
 	if ((subValue & 1)) {
-		if (core.on_subscribed(connInfo.getConnHandle())) {
+		DEBUG_PRINTLN("Subscribed from=%s, val=%u", connInfo.getAddress().toString().c_str(), subValue);
+		if (accept_result(core.on_subscribed(connInfo.getConnHandle()))) {
 			if (connect_callback) {
 				connect_callback(connInfo.getAddress());
 			}
 		} else {
-			ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_UNREGISTER);
+			ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_RETAIN);
 		}
 	}
 }
@@ -177,13 +183,42 @@ SesameServer::onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& conn
 	}
 }
 
+#if LIBSESAME3BT_SERVER_DEBUG
+static const char*
+result_str(core::result_t result) {
+	using result_t = core::result_t;
+	switch (result) {
+		case result_t::auth_failure:
+			return "auth_failure";
+		case result_t::crypt_failure:
+			return "crypt_failure";
+		case result_t::invalid_packet:
+			return "invalid_packet";
+		case result_t::invalid_state:
+			return "invalid_state";
+		case result_t::operation_unsupported:
+			return "operation_unsupported";
+		case result_t::success:
+			return "success";
+		case result_t::transport_failure:
+			return "transport_failure";
+		case result_t::invalid_argument:
+			return "invalid_argument";
+		default:
+			return "UNKNOWN";
+	}
+}
+#endif
+
 void
 SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
 	if (pCharacteristic == rx) {
 		auto val = pCharacteristic->getValue();
-		if (!core.on_received(connInfo.getConnHandle(), reinterpret_cast<const std::byte*>(val.data()), val.size())) {
-			DEBUG_PRINTLN("core.on_received failed, disconnect");
-			ble_server->disconnect(connInfo, BLE_DISCONNECT_REASON_RETAIN);
+		if (auto rc = core.on_received(connInfo.getConnHandle(), reinterpret_cast<const std::byte*>(val.data()), val.size());
+		    rc != core::result_t::success) {
+			DEBUG_PRINTLN("%s: core.on_received failed", result_str(rc));
+			ble_server->disconnect(connInfo,
+			                       rc == core::result_t::auth_failure ? BLE_DISCONNECT_REASON_UNREGISTER : BLE_DISCONNECT_REASON_RETAIN);
 		}
 	} else if (pCharacteristic == tx) {
 		DEBUG_PRINTLN("onWrite TX(ignored)");
@@ -295,5 +330,25 @@ SesameServer::get_session_id(const NimBLEAddress& addr) const {
 	}
 	return conn.getConnHandle();
 }
+
+#if __cplusplus >= 202002L && LIBSESAME3BT_SERVER_DEBUG
+bool
+SesameServer::accept_result(core::result_t result, std::source_location location) {
+	last_result = result;
+	if (result != core::result_t::success) {
+		DEBUG_PRINTLN("%s: %s", location.function_name(), result_str(result));
+	}
+	return result == core::result_t::success;
+}
+#else
+bool
+SesameServer::accept_result(core::result_t result) {
+	last_result = result;
+	if (result != core::result_t::success) {
+		DEBUG_PRINTLN("%s: Failure in core", result_str(result));
+	}
+	return result == core::result_t::success;
+}
+#endif
 
 }  // namespace libsesame3bt

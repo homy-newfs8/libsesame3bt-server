@@ -8,6 +8,9 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#if __cplusplus >= 202002L
+#include <source_location>
+#endif
 
 namespace libsesame3bt {
 
@@ -37,7 +40,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool start_advertising();
 	bool stop_advertising();
 	void update();
-	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) { return core.set_registered(secret); }
+	void set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) { core.set_registered(secret); }
 	void set_on_registration_callback(registration_callback_t callback) { registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { command_callback = callback; }
 	void set_on_connect_callback(connect_callback_t callback) { connect_callback = callback; }
@@ -68,6 +71,8 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	disconnect_callback_t disconnect_callback = nullptr;
 	login_callback_t login_callback = nullptr;
 	connect_check_callback_t connect_check_callback = nullptr;
+	core::result_t last_result;
+	core::SesameServerCore::update_handle_t update_handle{};
 
 	core::SesameServerCore core;
 
@@ -77,7 +82,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	virtual void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
 	virtual void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
 	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) override;
-	virtual void disconnect(uint16_t session_id) override;
+	void disconnect(uint16_t session_id);
 	void on_registration(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	void on_login(uint16_t session_id);
 	Sesame::result_code_t on_command(uint16_t session_id,
@@ -92,11 +97,16 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	                 Sesame::item_code_t item_code,
 	                 const std::byte* data,
 	                 size_t size) {
-		return core.send_notify(session_id, op_code, item_code, data, size);
+		return accept_result(core.send_notify(session_id, op_code, item_code, data, size));
 	}
 	bool set_advertising_data();
 	std::optional<uint16_t> get_session_id(const NimBLEAddress& addr) const;
 	bool is_addr_permitted(const NimBLEAddress& addr) const;
+#if __cplusplus >= 202002L && LIBSESAME3BT_SERVER_DEBUG
+	bool accept_result(core::result_t result, const std::source_location = std::source_location::current());
+#else
+	bool accept_result(core::result_t result);
+#endif
 };
 
 }  // namespace libsesame3bt

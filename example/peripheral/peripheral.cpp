@@ -83,7 +83,7 @@ bool
 prepare_secret() {
 #ifdef SESAME_SERVER_SECRET
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
-	return util::hex2bin(SESAME_SERVER_SECRET, secret) && server.set_registered(secret);
+	return util::hex2bin(SESAME_SERVER_SECRET, secret) && (server.set_registered(secret), true);
 #else
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
