@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace libsesame3bt {
@@ -49,6 +50,7 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	bool send_mecha_status(const NimBLEAddress* address, const Sesame::mecha_status_5_t& status);
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { core.set_mecha_setting(setting); }
 	void set_mecha_status(const Sesame::mecha_status_5_t& status) { core.set_mecha_status(status); }
+	void set_version_tag(std::string_view tag) { core.set_version_tag(tag); }
 	void set_auto_send_flags(auto_send::flags flags) { core.set_auto_send_flags(flags); }
 	bool has_session(const NimBLEAddress& addr) const;
 	void disconnect(const NimBLEAddress& addr);
