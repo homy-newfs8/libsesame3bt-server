@@ -4,7 +4,7 @@
 	"description": "Bluetooth LE server (peripheral) for CANDY HOUSE SESAME Remote.",
 	"license": "MIT",
 	"frameworks": [
-		"Arduino",
+		"arduino",
 		"espidf"
 	],
 	"platforms": "espressif32",
