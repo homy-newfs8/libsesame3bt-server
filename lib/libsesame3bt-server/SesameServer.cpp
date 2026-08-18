@@ -334,7 +334,6 @@ SesameServer::get_session_id(const NimBLEAddress& addr) const {
 #if __cplusplus >= 202002L && LIBSESAME3BT_SERVER_DEBUG
 bool
 SesameServer::accept_result(core::result_t result, std::source_location location) {
-	last_result = result;
 	if (result != core::result_t::success) {
 		DEBUG_PRINTLN("%s: %s", location.function_name(), result_str(result));
 	}
@@ -343,7 +342,6 @@ SesameServer::accept_result(core::result_t result, std::source_location location
 #else
 bool
 SesameServer::accept_result(core::result_t result) {
-	last_result = result;
 	if (result != core::result_t::success) {
 		DEBUG_PRINTLN("%s: Failure in core", result_str(result));
 	}

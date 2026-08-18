@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0] 2026-08-XX
+- Bump libsesame3bt-core version to v0.50.0
+
+## [v0.14.0] 2026-08-15
+- Add version_tag request handling
+
 ## [v0.13.3] 2026-08-08
 - Bump libsesame3bt-core version to v0.18.3
 

@@ -33,6 +33,8 @@
 #define SESAME_SERVER_MAX_SESSIONS 3
 #endif
 
+#define VERSION_TAG "3.0-5-09ca44"
+
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameServer;
 using libsesame3bt::core::Status;
@@ -180,6 +182,9 @@ setup() {
 	if (!server.is_registered()) {
 		server.set_on_registration_callback(on_registration);
 	}
+#ifdef VERSION_TAG
+	server.set_version_tag(VERSION_TAG);
+#endif
 	server.set_on_command_callback(on_command);
 	// ログイン完了時にmecha_statusを送信するコールバックを設定
 	server.set_on_login_callback([](const NimBLEAddress& addr) {
