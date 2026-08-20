@@ -2,6 +2,10 @@
 #include <libsesame3bt/ScannerCore.h>
 #include <libsesame3bt/util.h>
 #include <tuple>
+
+#ifndef LIBSESAME3BT_SERVER_DEBUG
+#define LIBSESAME3BT_SERVER_DEBUG 0
+#endif
 #include "debug.h"
 
 namespace libsesame3bt {
@@ -67,14 +71,42 @@ SesameServer::begin(Sesame::model_t model, const NimBLEUUID& my_uuid) {
 	return true;
 }
 
+#if LIBSESAME3BT_SERVER_DEBUG
+static const char*
+result_str(core::result_t result) {
+	using result_t = core::result_t;
+	switch (result) {
+		case result_t::auth_failure:
+			return "auth_failure";
+		case result_t::crypt_failure:
+			return "crypt_failure";
+		case result_t::invalid_packet:
+			return "invalid_packet";
+		case result_t::invalid_state:
+			return "invalid_state";
+		case result_t::operation_unsupported:
+			return "operation_unsupported";
+		case result_t::success:
+			return "success";
+		case result_t::transport_failure:
+			return "transport_failure";
+		case result_t::invalid_argument:
+			return "invalid_argument";
+		default:
+			return "UNKNOWN";
+	}
+}
+#endif
+
 void
 SesameServer::update() {
 	if (!ble_server) {
 		return;
 	}
-	auto [id, result] = core.update(update_handle);
+	auto [id, result] = core.update();
 	if (id.has_value()) {
 		if (result != core::result_t::success) {
+			DEBUG_PRINTLN("%u: Session returned error result %s, disconnecting", *id, result_str(result));
 			disconnect(*id);
 		}
 	}
@@ -182,33 +214,6 @@ SesameServer::onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& conn
 		DEBUG_PRINTLN("onRead TX(ignored)");
 	}
 }
-
-#if LIBSESAME3BT_SERVER_DEBUG
-static const char*
-result_str(core::result_t result) {
-	using result_t = core::result_t;
-	switch (result) {
-		case result_t::auth_failure:
-			return "auth_failure";
-		case result_t::crypt_failure:
-			return "crypt_failure";
-		case result_t::invalid_packet:
-			return "invalid_packet";
-		case result_t::invalid_state:
-			return "invalid_state";
-		case result_t::operation_unsupported:
-			return "operation_unsupported";
-		case result_t::success:
-			return "success";
-		case result_t::transport_failure:
-			return "transport_failure";
-		case result_t::invalid_argument:
-			return "invalid_argument";
-		default:
-			return "UNKNOWN";
-	}
-}
-#endif
 
 void
 SesameServer::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {

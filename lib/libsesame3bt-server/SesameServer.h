@@ -73,7 +73,6 @@ class SesameServer : private NimBLEServerCallbacks, private NimBLECharacteristic
 	disconnect_callback_t disconnect_callback = nullptr;
 	login_callback_t login_callback = nullptr;
 	connect_check_callback_t connect_check_callback = nullptr;
-	core::SesameServerCore::update_handle_t update_handle{};
 
 	core::SesameServerCore core;
 
