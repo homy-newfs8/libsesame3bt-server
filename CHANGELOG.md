@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.50.0] 2026-08-23
+- Bump libsesame3bt-core version to v0.50.0
+
 ## [v0.14.0] 2026-08-15
 - Add version_tag request handling
 
@@ -17,7 +20,7 @@
 
 ## [v0.12.0] 2026-05-31
 - API Changes
-  - Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
+	- Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
 
 ## [v0.11.0] 2026-04-11
 - Bump NimBLE version for recent platform compatibility.
